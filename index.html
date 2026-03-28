@@ -276,11 +276,7 @@ button{cursor:pointer;font-family:var(--fb)}
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="globalLoader">
-  <div class="loader-logo">CINE<span style="color:#fff">STREAM</span></div>
-  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
-</div>
+
 
 <!-- TOAST -->
 <div id="toast"></div>
@@ -550,28 +546,18 @@ window.onload = async () => {
     const nb = document.getElementById('navbar'); if(nb) nb.classList.toggle('scrolled', scrollY > 60)
   })
 
-  // Safety timeout — never get stuck on loader
-  const loaderTimeout = setTimeout(() => {
-    hideLoader()
-    showPage('login')
-  }, 2000)
+  // Show login immediately
+  showPage('login')
 
+  // Then check if already logged in
   try {
-    // Check existing Supabase session
     const { data: { session } } = await sb.auth.getSession()
-    clearTimeout(loaderTimeout)
     if (session) {
       user = session.user
       await loadProfile()
       enterApp()
-    } else {
-      hideLoader()
-      showPage('login')
     }
   } catch(e) {
-    clearTimeout(loaderTimeout)
-    hideLoader()
-    showPage('login')
     console.error('Supabase error:', e)
   }
 
