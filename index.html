@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CineStream</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -511,7 +512,7 @@ button{cursor:pointer;font-family:var(--fb)}
   </div>
 </div>
 
-<script defer>
+<script>
 // ══════════════════════════════════════════════
 //  ⚠️  SUBSTITUA AQUI COM SUAS CHAVES DO SUPABASE
 // ══════════════════════════════════════════════
@@ -546,22 +547,27 @@ window.onload = async () => {
     const nb = document.getElementById('navbar'); if(nb) nb.classList.toggle('scrolled', scrollY > 60)
   })
 
-  // Show login immediately
+  // Show login immediately - no waiting
   showPage('login')
 
-  // Then check if already logged in
-  try {
-    if (sb) {
+  // Wait for supabase to be ready then check session
+  let attempts = 0
+  const waitForSb = setInterval(async () => {
+    attempts++
+    if (attempts > 20) { clearInterval(waitForSb); return }
+    if (typeof supabase === 'undefined' || !sb) return
+    clearInterval(waitForSb)
+    try {
       const { data: { session } } = await sb.auth.getSession()
       if (session) {
         user = session.user
         await loadProfile()
         enterApp()
       }
+    } catch(e) {
+      console.error('Supabase error:', e)
     }
-  } catch(e) {
-    console.error('Supabase error:', e)
-  }
+  }, 200)
 
   // Listen for auth changes
   sb.auth.onAuthStateChange(async (event, session) => {
