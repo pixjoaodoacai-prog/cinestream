@@ -26,7 +26,7 @@ button{cursor:pointer;font-family:var(--fb)}
 
 .page{display:none;min-height:100vh}
 .page.active{display:block}
-#loginPage{display:flex!important;flex-direction:column;align-items:center;justify-content:center}
+#loginPage.active{display:flex!important;flex-direction:column;align-items:center;justify-content:center}
 
 
 
@@ -664,7 +664,7 @@ async function loadProfile() {
 function enterApp() {
   // Hide login page
   const lp = document.getElementById('loginPage')
-  if (lp) lp.style.display = 'none'
+  if (lp) { lp.style.display = 'none'; lp.classList.add('hidden') }
   // Show navbar
   const navEl = document.getElementById('navbar')
   if (navEl) navEl.style.display = 'flex'
