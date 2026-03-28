@@ -29,7 +29,7 @@ button{cursor:pointer;font-family:var(--fb)}
 
 /* ── LOADER ── */
 #globalLoader{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
-#globalLoader.hidden{opacity:0;pointer-events:none}
+#globalLoader.hidden{display:none!important;opacity:0;pointer-events:none}
 .loader-logo{font-family:var(--fd);font-size:52px;color:var(--red);letter-spacing:4px}
 .loader-bar{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
 .loader-bar-fill{height:100%;background:var(--red);border-radius:2px;animation:loaderAnim 1.5s ease-in-out infinite}
@@ -554,7 +554,7 @@ window.onload = async () => {
   const loaderTimeout = setTimeout(() => {
     hideLoader()
     showPage('login')
-  }, 5000)
+  }, 2000)
 
   try {
     // Check existing Supabase session
