@@ -26,12 +26,12 @@ button{cursor:pointer;font-family:var(--fb)}
 
 .page{display:none;min-height:100vh}
 .page.active{display:block}
-#loginPage.active{display:flex!important;flex-direction:column;align-items:center;justify-content:center}
+#loginPage.active{display:flex}
 
 
 
 /* ── LOGIN ── */
-#loginPage{background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,.7)),radial-gradient(ellipse at center,#1a0000,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
+#loginPage{background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,.7)),radial-gradient(ellipse at center,#1a0000,#000);flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
 #loginPage::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(229,9,20,.07),transparent 70%)}
 .login-logo{font-family:var(--fd);font-size:52px;color:var(--red);letter-spacing:4px;margin-bottom:36px;text-shadow:0 0 40px rgba(229,9,20,.5)}
 .login-box{background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:44px 38px;width:100%;max-width:420px;backdrop-filter:blur(10px)}
@@ -296,7 +296,7 @@ button{cursor:pointer;font-family:var(--fb)}
 </nav>
 
 <!-- ──────── LOGIN ──────── -->
-<div id="loginPage" class="page active">
+<div id="loginPage" class="page active" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
   <div class="login-logo">CINE<span style="color:#fff">STREAM</span></div>
   <div class="login-box">
     <h2 id="authTitle">Entrar</h2>
@@ -683,9 +683,17 @@ function enterApp() {
 
 // ─── PAGES ───
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => { if(p) p.classList.remove('active') })
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => {
+    if(p) { p.classList.remove('active'); p.style.display = 'none' }
+  })
+  // Show target page
   const pg = document.getElementById(name + 'Page')
-  if (pg) pg.classList.add('active')
+  if (pg) {
+    pg.classList.add('active')
+    pg.style.display = name === 'login' ? 'flex' : 'block'
+  }
+  // Update nav links
   document.querySelectorAll('.nav-link').forEach(l => { if(l) l.classList.remove('active') })
   const idx = { home: 0, search: 1, favorites: 2, profile: 3 }
   const navLinks = document.querySelectorAll('.nav-link')
