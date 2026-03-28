@@ -579,8 +579,7 @@ window.onload = async () => {
 
 function hideLoader() {
   const l = document.getElementById('globalLoader')
-  l.classList.add('hidden')
-  setTimeout(() => l.remove(), 600)
+  if (l) { l.classList.add('hidden'); setTimeout(() => l.remove(), 600) }
 }
 
 // ─── AUTH ───
@@ -598,7 +597,7 @@ function showAuthError(msg) {
   const el = document.getElementById('authError')
   el.textContent = msg; el.classList.add('show')
 }
-function hideAuthError() { document.getElementById('authError').classList.remove('show') }
+function hideAuthError() { const e = document.getElementById('authError'); if(e) e.classList.remove('show') }
 
 async function doAuth() {
   const email = document.getElementById('aEmail').value.trim()
@@ -662,7 +661,7 @@ function enterApp() {
   const navEl = document.getElementById('navbar'); if(navEl) navEl.style.display = 'flex'
   const name = profile?.name || user?.email?.split('@')[0] || '?'
   document.getElementById('navAv').textContent = name.charAt(0).toUpperCase()
-  if (profile?.is_admin) document.getElementById('adminBtn').classList.add('show')
+  const ab = document.getElementById('adminBtn'); if (profile?.is_admin && ab) ab.classList.add('show')
   hideLoader()
   showPage('home')
   loadHome()
@@ -670,11 +669,13 @@ function enterApp() {
 
 // ─── PAGES ───
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
-  document.getElementById(name + 'Page').classList.add('active')
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'))
+  document.querySelectorAll('.page').forEach(p => { if(p) p.classList.remove('active') })
+  const pg = document.getElementById(name + 'Page')
+  if (pg) pg.classList.add('active')
+  document.querySelectorAll('.nav-link').forEach(l => { if(l) l.classList.remove('active') })
   const idx = { home: 0, search: 1, favorites: 2, profile: 3 }
-  if (idx[name] !== undefined) document.querySelectorAll('.nav-link')[idx[name]]?.classList.add('active')
+  const navLinks = document.querySelectorAll('.nav-link')
+  if (idx[name] !== undefined && navLinks[idx[name]]) navLinks[idx[name]].classList.add('active')
   window.scrollTo(0, 0)
   if (name === 'favorites') loadFavorites()
   if (name === 'profile') loadProfile().then(renderProfile)
@@ -788,12 +789,12 @@ async function openMovie(id) {
   await loadReviews(id)
   setStar(5)
   document.getElementById('revText').value = ''
-  document.getElementById('movieModal').classList.add('open')
+  const mm = document.getElementById('movieModal'); if(mm) mm.classList.add('open')
   document.body.style.overflow = 'hidden'
 }
 
 function closeModal() {
-  document.getElementById('movieModal').classList.remove('open')
+  const mm2 = document.getElementById('movieModal'); if(mm2) mm2.classList.remove('open')
   document.getElementById('playerIframe').src = ''
   document.body.style.overflow = ''
 }
