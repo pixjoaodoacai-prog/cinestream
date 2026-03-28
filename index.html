@@ -547,7 +547,7 @@ let activeGenre = null
 // ─── INIT ───
 window.onload = async () => {
   window.addEventListener('scroll', () => {
-    document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60)
+    const nb = document.getElementById('navbar'); if(nb) nb.classList.toggle('scrolled', scrollY > 60)
   })
 
   // Safety timeout — never get stuck on loader
@@ -656,7 +656,7 @@ async function doLogout() {
   if (user?.id !== 'guest') await sb.auth.signOut()
   user = null; profile = null
   adminUnlocked = false
-  document.getElementById('navbar').style.display = 'none'
+  const nav = document.getElementById('navbar'); if(nav) nav.style.display = 'none'
   showPage('login')
   toast('Até logo! 👋')
 }
@@ -673,7 +673,7 @@ async function loadProfile() {
 }
 
 function enterApp() {
-  document.getElementById('navbar').style.display = 'flex'
+  const navEl = document.getElementById('navbar'); if(navEl) navEl.style.display = 'flex'
   const name = profile?.name || user?.email?.split('@')[0] || '?'
   document.getElementById('navAv').textContent = name.charAt(0).toUpperCase()
   if (profile?.is_admin) document.getElementById('adminBtn').classList.add('show')
