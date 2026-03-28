@@ -427,8 +427,38 @@ button{cursor:pointer;font-family:var(--fb)}
         <div class="fga"><label>Diretor</label><input type="text" id="mDir" placeholder="Nome do diretor"/></div>
         <div class="fga"><label>Elenco</label><input type="text" id="mCast" placeholder="Ator 1, Ator 2"/></div>
         <div class="fga full"><label>Descrição</label><textarea id="mDesc" placeholder="Sinopse..."></textarea></div>
-        <div class="fga full"><label>URL da Capa (link de imagem)</label><input type="url" id="mPoster" placeholder="https://..."/></div>
-        <div class="fga full"><label>URL do Trailer (YouTube embed) — https://www.youtube.com/embed/ID</label><input type="url" id="mTrailer" placeholder="https://www.youtube.com/embed/..."/></div>
+        <div class="fga full">
+          <label>Capa do Filme</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="url" id="mPoster" placeholder="URL da imagem ou use o upload abaixo..." style="flex:1"/>
+          </div>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+            <label style="background:var(--red);color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;letter-spacing:1px;text-transform:uppercase">
+              📁 Escolher Imagem
+              <input type="file" id="posterFile" accept="image/*" style="display:none" onchange="uploadFile(this,'poster')"/>
+            </label>
+            <span id="posterStatus" style="font-size:12px;color:var(--text2)">Nenhum arquivo</span>
+          </div>
+        </div>
+        <div class="fga full">
+          <label>Vídeo do Filme</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="url" id="mTrailer" placeholder="URL do vídeo ou use o upload abaixo..." style="flex:1"/>
+          </div>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+            <label style="background:var(--red);color:#fff;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;letter-spacing:1px;text-transform:uppercase">
+              🎬 Escolher Vídeo
+              <input type="file" id="videoFile" accept="video/*" style="display:none" onchange="uploadFile(this,'video')"/>
+            </label>
+            <span id="videoStatus" style="font-size:12px;color:var(--text2)">Nenhum arquivo</span>
+          </div>
+          <div id="uploadProgress" style="display:none;margin-top:10px">
+            <div style="background:var(--bg4);border-radius:4px;height:6px;overflow:hidden">
+              <div id="progressBar" style="height:100%;background:var(--red);width:0%;transition:width 0.3s;border-radius:4px"></div>
+            </div>
+            <span id="progressText" style="font-size:11px;color:var(--text2);margin-top:4px;display:block">Enviando...</span>
+          </div>
+        </div>
         <div class="fga"><label>Emoji (ícone)</label><input type="text" id="mEmoji" placeholder="🎬" maxlength="2"/></div>
         <div class="fga"><label>Nota (0-10)</label><input type="number" id="mRating" placeholder="8.0" min="0" max="10" step="0.1"/></div>
       </div>
@@ -523,6 +553,9 @@ let sb
 
 // Senha do painel admin (pode mudar aqui)
 const ADMIN_PASS = 'admin123'
+
+// Cloudflare R2 URL público
+const R2_URL = 'https://pub-bc797bc4ecf545a3a21dcf608d1b48bf.r2.dev'
 
 // ─── STATE ───
 let user = null
@@ -1130,6 +1163,62 @@ function switchTab(tab) {
   document.querySelectorAll('.atab').forEach((t, i) => t.classList.toggle('active', ['movies','users','reviews'][i] === tab))
   document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'))
   document.getElementById('p' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active')
+}
+
+// Upload file to Cloudflare R2 via Supabase Storage (proxy)
+async function uploadFile(input, type) {
+  const file = input.files[0]
+  if (!file) return
+  const statusEl = document.getElementById(type === 'poster' ? 'posterStatus' : 'videoStatus')
+  const urlInput = document.getElementById(type === 'poster' ? 'mPoster' : 'mTrailer')
+  statusEl.textContent = '⏳ Enviando...'
+  statusEl.style.color = 'var(--gold)'
+
+  // Show progress bar for videos
+  if (type === 'video') {
+    document.getElementById('uploadProgress').style.display = 'block'
+  }
+
+  try {
+    const ext = file.name.split('.').pop()
+    const folder = type === 'poster' ? 'posters' : 'videos'
+    const filename = `${folder}/${Date.now()}.${ext}`
+
+    // Upload to Supabase Storage
+    const { data, error } = await sb.storage
+      .from('cinestream')
+      .upload(filename, file, { 
+        cacheControl: '3600',
+        upsert: false,
+        onUploadProgress: (progress) => {
+          if (type === 'video') {
+            const pct = Math.round((progress.loaded / progress.total) * 100)
+            document.getElementById('progressBar').style.width = pct + '%'
+            document.getElementById('progressText').textContent = `Enviando... ${pct}%`
+          }
+        }
+      })
+
+    if (error) throw error
+
+    // Get public URL from Supabase Storage
+    const { data: urlData } = sb.storage.from('cinestream').getPublicUrl(filename)
+    const publicUrl = urlData.publicUrl
+
+    urlInput.value = publicUrl
+    statusEl.textContent = '✅ ' + file.name
+    statusEl.style.color = 'var(--green)'
+    if (type === 'video') {
+      document.getElementById('progressBar').style.width = '100%'
+      document.getElementById('progressText').textContent = 'Enviado com sucesso!'
+    }
+    toast(type === 'poster' ? 'Imagem enviada! ✅' : 'Vídeo enviado! ✅', 'ok')
+  } catch(e) {
+    console.error('Upload error:', e)
+    statusEl.textContent = '❌ Erro no envio'
+    statusEl.style.color = 'var(--red)'
+    toast('Erro ao enviar arquivo! Verifique o Supabase Storage.')
+  }
 }
 
 async function saveMovie() {
