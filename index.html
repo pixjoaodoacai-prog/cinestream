@@ -26,7 +26,7 @@ button{cursor:pointer;font-family:var(--fb)}
 
 .page{display:none;min-height:100vh}
 .page.active{display:block}
-#loginPage{display:block}
+#loginPage{display:flex!important;flex-direction:column;align-items:center;justify-content:center}
 
 
 
@@ -325,7 +325,7 @@ button{cursor:pointer;font-family:var(--fb)}
 </div>
 
 <!-- ──────── HOME ──────── -->
-<div id="homePage" class="page">
+<div id="homePage" class="page" style="display:none">
   <div class="hero" id="hero">
     <div class="hero-bg"><div class="hero-bg-img" id="heroBgImg"></div></div>
     <div class="hero-overlay"></div>
