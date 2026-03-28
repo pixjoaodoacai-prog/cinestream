@@ -26,14 +26,9 @@ button{cursor:pointer;font-family:var(--fb)}
 
 .page{display:none;min-height:100vh}
 .page.active{display:block}
+#loginPage{display:block}
 
-/* ── LOADER ── */
-#globalLoader{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
-#globalLoader.hidden{display:none!important;opacity:0;pointer-events:none}
-.loader-logo{font-family:var(--fd);font-size:52px;color:var(--red);letter-spacing:4px}
-.loader-bar{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
-.loader-bar-fill{height:100%;background:var(--red);border-radius:2px;animation:loaderAnim 1.5s ease-in-out infinite}
-@keyframes loaderAnim{0%{width:0;margin-left:0}50%{width:100%}100%{width:0;margin-left:100%}}
+
 
 /* ── LOGIN ── */
 #loginPage{background:linear-gradient(rgba(0,0,0,.7),rgba(0,0,0,.7)),radial-gradient(ellipse at center,#1a0000,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
@@ -524,8 +519,13 @@ const SUPABASE_URL = 'https://unwfztslqxnuwmnzoyzp.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVud2Z6dHNscXhudXdtbnpveXpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTg0MjUsImV4cCI6MjA5MDI5NDQyNX0.z1kEVxOcC5tOk8UlmeV1iMXcDKnUK5MpZyD4IRtAJ3I'
 // ══════════════════════════════════════════════
 
-const { createClient } = supabase
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
+let sb
+try {
+  const { createClient } = supabase
+  sb = createClient(SUPABASE_URL, SUPABASE_KEY)
+} catch(e) {
+  console.error('Supabase failed to load:', e)
+}
 
 // Senha do painel admin (pode mudar aqui)
 const ADMIN_PASS = 'admin123'
@@ -551,11 +551,13 @@ window.onload = async () => {
 
   // Then check if already logged in
   try {
-    const { data: { session } } = await sb.auth.getSession()
-    if (session) {
-      user = session.user
-      await loadProfile()
-      enterApp()
+    if (sb) {
+      const { data: { session } } = await sb.auth.getSession()
+      if (session) {
+        user = session.user
+        await loadProfile()
+        enterApp()
+      }
     }
   } catch(e) {
     console.error('Supabase error:', e)
