@@ -662,12 +662,22 @@ async function loadProfile() {
 }
 
 function enterApp() {
-  const navEl = document.getElementById('navbar'); if(navEl) navEl.style.display = 'flex'
+  // Hide login page
+  const lp = document.getElementById('loginPage')
+  if (lp) lp.style.display = 'none'
+  // Show navbar
+  const navEl = document.getElementById('navbar')
+  if (navEl) navEl.style.display = 'flex'
+  // Set user name
   const name = profile?.name || user?.email?.split('@')[0] || '?'
-  document.getElementById('navAv').textContent = name.charAt(0).toUpperCase()
-  const ab = document.getElementById('adminBtn'); if (profile?.is_admin && ab) ab.classList.add('show')
-  hideLoader()
-  showPage('home')
+  const navAv = document.getElementById('navAv')
+  if (navAv) navAv.textContent = name.charAt(0).toUpperCase()
+  const ab = document.getElementById('adminBtn')
+  if (profile?.is_admin && ab) ab.classList.add('show')
+  // Show home
+  document.querySelectorAll('.page').forEach(p => { if(p) p.style.display = 'none' })
+  const hp = document.getElementById('homePage')
+  if (hp) hp.style.display = 'block'
   loadHome()
 }
 
