@@ -554,8 +554,11 @@ let sb
 // Senha do painel admin (pode mudar aqui)
 const ADMIN_PASS = 'admin123'
 
-// Cloudflare R2 URL público
+// Cloudflare R2
 const R2_URL = 'https://pub-bc797bc4ecf545a3a21dcf608d1b48bf.r2.dev'
+const R2_ACCOUNT_ID = 'cc52dcc1ee92150e29afce16387854f1'
+const R2_BUCKET = 'cinestream'
+const R2_TOKEN = 'cfut_9sDo8x7R7YRdAevXlUTqagLnRIUgJuQzpNSycVHu730bfa82'
 
 // ─── STATE ───
 let user = null
@@ -1165,59 +1168,68 @@ function switchTab(tab) {
   document.getElementById('p' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active')
 }
 
-// Upload file to Cloudflare R2 via Supabase Storage (proxy)
+// Upload direto para Cloudflare R2 via S3 API
 async function uploadFile(input, type) {
   const file = input.files[0]
   if (!file) return
+
   const statusEl = document.getElementById(type === 'poster' ? 'posterStatus' : 'videoStatus')
   const urlInput = document.getElementById(type === 'poster' ? 'mPoster' : 'mTrailer')
+  const progressWrap = document.getElementById('uploadProgress')
+  const progressBar = document.getElementById('progressBar')
+  const progressText = document.getElementById('progressText')
+
   statusEl.textContent = '⏳ Enviando...'
   statusEl.style.color = 'var(--gold)'
-
-  // Show progress bar for videos
-  if (type === 'video') {
-    document.getElementById('uploadProgress').style.display = 'block'
-  }
+  progressWrap.style.display = 'block'
+  progressBar.style.width = '0%'
+  progressText.textContent = 'Iniciando upload...'
 
   try {
     const ext = file.name.split('.').pop()
     const folder = type === 'poster' ? 'posters' : 'videos'
     const filename = `${folder}/${Date.now()}.${ext}`
+    const uploadURL = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}/${filename}`
 
-    // Upload to Supabase Storage
-    const { data, error } = await sb.storage
-      .from('cinestream')
-      .upload(filename, file, { 
-        cacheControl: '3600',
-        upsert: false,
-        onUploadProgress: (progress) => {
-          if (type === 'video') {
-            const pct = Math.round((progress.loaded / progress.total) * 100)
-            document.getElementById('progressBar').style.width = pct + '%'
-            document.getElementById('progressText').textContent = `Enviando... ${pct}%`
-          }
+    // Upload via XMLHttpRequest para ter progresso real
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('PUT', uploadURL)
+      xhr.setRequestHeader('Authorization', `Bearer ${R2_TOKEN}`)
+      xhr.setRequestHeader('Content-Type', file.type)
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100)
+          progressBar.style.width = pct + '%'
+          const loaded = (e.loaded / 1024 / 1024).toFixed(1)
+          const total = (e.total / 1024 / 1024).toFixed(1)
+          progressText.textContent = `Enviando... ${pct}% (${loaded}MB / ${total}MB)`
         }
-      })
+      }
 
-    if (error) throw error
+      xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 201) resolve()
+        else reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`))
+      }
+      xhr.onerror = () => reject(new Error('Erro de conexão'))
+      xhr.send(file)
+    })
 
-    // Get public URL from Supabase Storage
-    const { data: urlData } = sb.storage.from('cinestream').getPublicUrl(filename)
-    const publicUrl = urlData.publicUrl
-
+    const publicUrl = `${R2_URL}/${filename}`
     urlInput.value = publicUrl
     statusEl.textContent = '✅ ' + file.name
     statusEl.style.color = 'var(--green)'
-    if (type === 'video') {
-      document.getElementById('progressBar').style.width = '100%'
-      document.getElementById('progressText').textContent = 'Enviado com sucesso!'
-    }
+    progressBar.style.width = '100%'
+    progressText.textContent = '✅ Upload concluído!'
     toast(type === 'poster' ? 'Imagem enviada! ✅' : 'Vídeo enviado! ✅', 'ok')
+
   } catch(e) {
     console.error('Upload error:', e)
-    statusEl.textContent = '❌ Erro no envio'
+    statusEl.textContent = '❌ Erro: ' + e.message
     statusEl.style.color = 'var(--red)'
-    toast('Erro ao enviar arquivo! Verifique o Supabase Storage.')
+    progressText.textContent = '❌ Falhou: ' + e.message
+    toast('Erro ao enviar: ' + e.message)
   }
 }
 
